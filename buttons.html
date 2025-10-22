@@ -1,32 +1,136 @@
-<div style="display: flex; justify-content: center; align-items: center; gap: 8px;">
+<style>
+  :root{
+    /* Brand tokens */
+    --brand-navy:#002850;
+    --brand-teal:#00AAE0;
+    --brand-green:#39B44A;
+    --brand-gray:#969696;
 
-  <!-- Button 1 -->
-  <button id="b1"
-    style="background-color: #002850; border-color: #002850; color: white; height:130px;width:305px; cursor:pointer; font-size: 20px;"
-    onclick="window.open('https://www.wrike.com/form/eyJhY2NvdW50SWQiOjMzMTkwMzEsInRhc2tGb3JtSWQiOjI0ODk5Nzd9CTQ5MTM5NjYwODg0NDgJZjc1YzEyMTU1NzU5ZjM1NjMzMzEwYzBlZWJjYjU5OGVmMGNhNDA5ZDhkMzNkZGE0ZWRmMDRlNGEzYzliNzlhZQ==','_blank');">
-    <span style="font-size : 35px;">Intake Form</span><br>
-    <span style="font-size : 14px;">New Report | Enhancements | Data Quality</span>
+    /* Neutrals & effects */
+    --text-on-dark:#ffffff;
+    --ring:#7cd1ff;
+    --gap:10px;
+    --radius:14px;
+    --shadow:0 6px 16px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.08);
+    --shadow-hover:0 10px 22px rgba(0,0,0,.16), 0 3px 10px rgba(0,0,0,.10);
+  }
+
+  .cta-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:stretch;
+    justify-content:center;
+    gap:var(--gap);
+    margin:8px 0;
+  }
+
+  .btn{
+    /* layout */
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:flex-start;
+    gap:6px;
+    padding:16px 18px;
+
+    /* size */
+    height:130px;
+    width:180px; /* shared size for b3/b4/b5 */
+    border-radius:var(--radius);
+    border:0;
+    cursor:pointer;
+
+    /* typography */
+    color:var(--text-on-dark);
+    text-align:left;
+    line-height:1.2;
+    font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+
+    /* depth */
+    box-shadow:var(--shadow);
+    transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  .btn::after{
+    /* subtle glossy sweep */
+    content:"";
+    position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0));
+    pointer-events:none;
+  }
+  .btn:hover{ transform:translateY(-1px); box-shadow:var(--shadow-hover); filter:saturate(1.05); }
+  .btn:active{ transform:translateY(0); filter:saturate(1.0) brightness(.98); }
+  .btn:focus-visible{
+    outline:3px solid var(--ring);
+    outline-offset:3px;
+  }
+
+  /* Color variants */
+  .btn--navy{ background:linear-gradient(180deg, #003367, var(--brand-navy)); }
+  .btn--teal{ background:linear-gradient(180deg, #0bc1ff, var(--brand-teal)); }
+  .btn--green{ background:linear-gradient(180deg, #52cc62, var(--brand-green)); }
+  .btn--gray{ background:linear-gradient(180deg, #b3b3b3, var(--brand-gray)); }
+
+  /* Content styles */
+  .btn .title{ font-size:22px; font-weight:700; }
+  .btn .subtitle{ font-size:14px; opacity:.95; }
+  .btn .icon{ font-size:22px; opacity:.95; }
+
+  /* Primary CTA (b1) is wider to stand out */
+  .btn--primary{ width:305px; }
+
+  /* Small screens: still one “row”, but wraps gracefully */
+  @media (max-width: 680px){
+    .btn--primary{ width:100%; }
+    .btn{ width:calc(50% - var(--gap)/2); }
+  }
+
+  /* Motion accessibility */
+  @media (prefers-reduced-motion: reduce){
+    .btn, .btn:hover, .btn:active{ transition:none; transform:none; }
+  }
+
+  /* Optional dark mode tuning */
+  @media (prefers-color-scheme: dark){
+    :root{ --shadow:0 6px 16px rgba(0,0,0,.35); --shadow-hover:0 10px 22px rgba(0,0,0,.45); }
+  }
+</style>
+
+<div class="cta-row">
+
+  <!-- Intake Form (Primary, wider) -->
+  <button class="btn btn--navy btn--primary"
+          id="b1"
+          aria-label="Open Intake Form"
+          onclick="window.open('https://www.wrike.com/form/eyJhY2NvdW50SWQiOjMzMTkwMzEsInRhc2tGb3JtSWQiOjI0ODk5Nzd9CTQ5MTM5NjYwODg0NDgJZjc1YzEyMTU1NzU5ZjM1NjMzMzEwYzBlZWJjYjU5OGVmMGNhNDA5ZDhkMzNkZGE0ZWRmMDRlNGEzYzliNzlhZQ==','_blank');">
+    <span class="icon">📝</span>
+    <span class="title">Intake Form</span>
+    <span class="subtitle">New Report · Enhancements · Data Quality</span>
   </button>
 
-  <!-- Button 2 -->
-  <button id="b3"
-    style="background-color: #00AAE0; border-color: #00AAE0; color: white; height:130px;width:150px; cursor:pointer; font-size : 20px;"
-    onclick="window.location.href='https://confluence.sys.cigna.com/display/CareAlliesReporting/HOME?preview=/383969292/903781920/Requesting%20Access%20to%20Tableau%20within%20ARS.pdf';">
-    How to Access <b>Tableau Reporting</b> Server
+  <!-- Tableau Access -->
+  <button class="btn btn--teal" id="b3" aria-label="How to access Tableau Reporting Server"
+          onclick="window.location.href='https://confluence.sys.cigna.com/display/CareAlliesReporting/HOME?preview=/383969292/903781920/Requesting%20Access%20to%20Tableau%20within%20ARS.pdf';">
+    <span class="icon">📊</span>
+    <span class="title">Access Tableau</span>
+    <span class="subtitle">Reporting Server guide</span>
   </button>
 
-  <!-- Button 3 -->
-  <button id="b4"
-    style="background-color: #39B44A; border-color: #39B44A; color: white; height:130px;width:150px; cursor:pointer; font-size : 20px;"
-    onclick="window.location.href='https://confluence.sys.cigna.com/display/CareAlliesReporting/HOME?preview=/383969292/1013755728/Requesting%20Access%20to%20the%20CareAllies%20Reporting%20Drive%20within%20ARS.pdf';">
-    How to Access <b>CareAllies Reporting</b> Drive
+  <!-- Reporting Drive Access -->
+  <button class="btn btn--green" id="b4" aria-label="How to access CareAllies Reporting Drive"
+          onclick="window.location.href='https://confluence.sys.cigna.com/display/CareAlliesReporting/HOME?preview=/383969292/1013755728/Requesting%20Access%20to%20the%20CareAllies%20Reporting%20Drive%20within%20ARS.pdf';">
+    <span class="icon">📁</span>
+    <span class="title">Reporting Drive</span>
+    <span class="subtitle">Access instructions</span>
   </button>
 
-  <!-- Button 4 (was thin_button) -->
-  <button id="b5"
-    style="background-color: #969696; border-color: #acaaaa; color: white; height:130px;width:150px; cursor:pointer; font-size : 20px;"
-    onclick="location.href='mailto:meghan.lancaster@careallies.com';">
-    ✉ General Analytics Questions
+  <!-- General Analytics Questions (was thin_button) -->
+  <button class="btn btn--gray" id="b5" aria-label="Email for general analytics questions"
+          onclick="location.href='mailto:meghan.lancaster@careallies.com';">
+    <span class="icon">✉️</span>
+    <span class="title">Analytics Help</span>
+    <span class="subtitle">General questions</span>
   </button>
 
-</div>
+</div> 
