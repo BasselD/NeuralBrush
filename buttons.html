@@ -1,136 +1,135 @@
 <style>
   :root{
-    /* Brand tokens */
     --brand-navy:#002850;
     --brand-teal:#00AAE0;
     --brand-green:#39B44A;
     --brand-gray:#969696;
-
-    /* Neutrals & effects */
+    --brand-yellow:#FDBA21; /* Reporting Directory */
     --text-on-dark:#ffffff;
-    --ring:#7cd1ff;
     --gap:10px;
-    --radius:14px;
+    --radius:10px; /*button corners - rounding radius */
     --shadow:0 6px 16px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.08);
     --shadow-hover:0 10px 22px rgba(0,0,0,.16), 0 3px 10px rgba(0,0,0,.10);
+    --btn-width:320px;   /* all buttons same width */
   }
 
-  .cta-row{
+  .cta-col{
     display:flex;
-    flex-wrap:wrap;
-    align-items:stretch;
-    justify-content:center;
+    flex-direction:column;
+    align-items:center;      /* center the column on the page */
     gap:var(--gap);
-    margin:8px 0;
+    margin:10px 0;
   }
 
   .btn{
-    /* layout */
     display:flex;
     flex-direction:column;
     justify-content:center;
     align-items:flex-start;
     gap:6px;
     padding:16px 18px;
-
-    /* size */
-    height:130px;
-    width:180px; /* shared size for b3/b4/b5 */
+    height:110px;
+    width:var(--btn-width);  /* uniform width */
     border-radius:var(--radius);
     border:0;
     cursor:pointer;
-
-    /* typography */
     color:var(--text-on-dark);
     text-align:left;
-    line-height:1.2;
-    font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-
-    /* depth */
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
     box-shadow:var(--shadow);
-    transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    transition:all .18s ease;
     position:relative;
     overflow:hidden;
   }
+  .btn--primary{
+  height:160px;              /* taller */
+  }
+  .btn--primary.title{
+  font-size:24px;            /* a little larger */
+  }
+
   .btn::after{
-    /* subtle glossy sweep */
     content:"";
     position:absolute; inset:0;
     background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0));
     pointer-events:none;
   }
-  .btn:hover{ transform:translateY(-1px); box-shadow:var(--shadow-hover); filter:saturate(1.05); }
-  .btn:active{ transform:translateY(0); filter:saturate(1.0) brightness(.98); }
-  .btn:focus-visible{
-    outline:3px solid var(--ring);
-    outline-offset:3px;
+  .btn:hover{
+    transform:translateY(-1px);
+    box-shadow:var(--shadow-hover), 0 0 0 3px rgba(255,255,255,.35); /* faded white outline */
+    filter:saturate(1.05);
   }
+  .btn:active{ transform:translateY(0); filter:saturate(1.0) brightness(.97); }
+  .btn:focus-visible{ outline:3px solid rgba(255,255,255,.5); outline-offset:2px; }
 
   /* Color variants */
   .btn--navy{ background:linear-gradient(180deg, #003367, var(--brand-navy)); }
   .btn--teal{ background:linear-gradient(180deg, #0bc1ff, var(--brand-teal)); }
   .btn--green{ background:linear-gradient(180deg, #52cc62, var(--brand-green)); }
+  .btn--yellow{ background:linear-gradient(180deg, #ffd566, var(--brand-yellow)); color:#1b1b1b; } /* darker text on yellow */
   .btn--gray{ background:linear-gradient(180deg, #b3b3b3, var(--brand-gray)); }
 
-  /* Content styles */
+  /* Content */
   .btn .title{ font-size:22px; font-weight:700; }
-  .btn .subtitle{ font-size:14px; opacity:.95; }
-  .btn .icon{ font-size:22px; opacity:.95; }
-
-  /* Primary CTA (b1) is wider to stand out */
-  .btn--primary{ width:305px; }
-
-  /* Small screens: still one “row”, but wraps gracefully */
-  @media (max-width: 680px){
-    .btn--primary{ width:100%; }
-    .btn{ width:calc(50% - var(--gap)/2); }
+  .btn .subtitle{ font-size:14px; opacity:.9; }
+  .btn .icon{
+    font-family:"Wingdings","Webdings",sans-serif;
+    font-size:24px;
+    opacity:.9;
+    margin-bottom:2px;
   }
 
-  /* Motion accessibility */
-  @media (prefers-reduced-motion: reduce){
-    .btn, .btn:hover, .btn:active{ transition:none; transform:none; }
-  }
-
-  /* Optional dark mode tuning */
-  @media (prefers-color-scheme: dark){
-    :root{ --shadow:0 6px 16px rgba(0,0,0,.35); --shadow-hover:0 10px 22px rgba(0,0,0,.45); }
+  /* Small screens: let width fill container neatly */
+  @media (max-width: 480px){
+    :root{ --btn-width:100%; }
   }
 </style>
 
-<div class="cta-row">
+<div class="cta-col">
 
-  <!-- Intake Form (Primary, wider) -->
+  <!-- Intake Form (navy) -->
   <button class="btn btn--navy btn--primary"
-          id="b1"
-          aria-label="Open Intake Form"
-          onclick="window.open('https://www.wrike.com/form/eyJhY2NvdW50SWQiOjMzMTkwMzEsInRhc2tGb3JtSWQiOjI0ODk5Nzd9CTQ5MTM5NjYwODg0NDgJZjc1YzEyMTU1NzU5ZjM1NjMzMzEwYzBlZWJjYjU5OGVmMGNhNDA5ZDhkMzNkZGE0ZWRmMDRlNGEzYzliNzlhZQ==','_blank');">
-    <span class="icon">📝</span>
+    aria-label="Open Intake Form"
+    onclick="window.open('https://www.wrike.com/form/eyJhY2NvdW50SWQiOjMzMTkwMzEsInRhc2tGb3JtSWQiOjI0ODk5Nzd9CTQ5MTM5NjYwODg0NDgJZjc1YzEyMTU1NzU5ZjM1NjMzMzEwYzBlZWJjYjU5OGVmMGNhNDA5ZDhkMzNkZGE0ZWRmMDRlNGEzYzliNzlhZQ==','_blank');">
+    <span class="title">📝</span>
     <span class="title">Intake Form</span>
     <span class="subtitle">New Report · Enhancements · Data Quality</span>
   </button>
 
-  <!-- Tableau Access -->
-  <button class="btn btn--teal" id="b3" aria-label="How to access Tableau Reporting Server"
-          onclick="window.location.href='https://confluence.sys.cigna.com/display/CareAlliesReporting/HOME?preview=/383969292/903781920/Requesting%20Access%20to%20Tableau%20within%20ARS.pdf';">
+  <!-- Tableau Access (teal) -->
+  <button class="btn btn--teal"
+    aria-label="How to access Tableau Reporting Server"
+    onclick="window.location.href='https://confluence.sys.cigna.com/display/CareAlliesReporting/HOME?preview=/383969292/903781920/Requesting%20Access%20to%20Tableau%20within%20ARS.pdf';">
     <span class="icon">📊</span>
-    <span class="title">Access Tableau</span>
-    <span class="subtitle">Reporting Server guide</span>
+    <span class="title">Tableau Server Access</span>
+    <span class="subtitle">Request access instructions</span>
   </button>
 
-  <!-- Reporting Drive Access -->
-  <button class="btn btn--green" id="b4" aria-label="How to access CareAllies Reporting Drive"
-          onclick="window.location.href='https://confluence.sys.cigna.com/display/CareAlliesReporting/HOME?preview=/383969292/1013755728/Requesting%20Access%20to%20the%20CareAllies%20Reporting%20Drive%20within%20ARS.pdf';">
-    <span class="icon">📁</span>
-    <span class="title">Reporting Drive</span>
-    <span class="subtitle">Access instructions</span>
+  <!-- Reporting Drive (green) -->
+  <button class="btn btn--green"
+    aria-label="How to access CareAllies Reporting Drive"
+    onclick="window.location.href='https://confluence.sys.cigna.com/display/CareAlliesReporting/HOME?preview=/383969292/1013755728/Requesting%20Access%20to%20the%20CareAllies%20Reporting%20Drive%20within%20ARS.pdf';">
+    <span class="icon">📂</span>
+    <span class="title">Shared Drive Access</span>
+    <span class="subtitle">Request access instructions</span>
   </button>
 
-  <!-- General Analytics Questions (was thin_button) -->
-  <button class="btn btn--gray" id="b5" aria-label="Email for general analytics questions"
-          onclick="location.href='mailto:meghan.lancaster@careallies.com';">
-    <span class="icon">✉️</span>
+  <!-- NEW: Reporting Directory (yellow, dummy link) -->
+  <button class="btn btn--yellow"
+    aria-label="Open Reporting Directory"
+    onclick="window.location.href='#';">
+    <span class="icon">📋</span>
+    <span class="title">Reporting Directory</span>
+    <span class="subtitle">All published reports</span>
+  </button>
+
+  <!-- Analytics Help (gray) -->
+  <button class="btn btn--gray"
+    aria-label="Email for general analytics questions"
+    onclick="location.href='mailto:meghan.lancaster@careallies.com';">
+    <span class="icon">📧</span>
     <span class="title">Analytics Help</span>
     <span class="subtitle">General questions</span>
   </button>
 
-</div> 
+</div>
