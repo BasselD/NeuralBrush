@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Learning Hierarchy Flow</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* General Dark Theme Setup */
+        body {
+            background-color: #111827; /* Dark Gray / Black */
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Hide scrollbars, D3 handles positioning */
+        }
+
+        /* SVG Container */
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* D3 Link Style (The connecting lines) */
+        .link {
+            fill: none;
+            stroke-width: 2px;
+            /* Changed color for better contrast */
+            stroke: #6B7280; 
+            /* Added for smooth, rounded corners */
+            stroke-linecap: round; 
+            stroke-linejoin: round;
+        }
+
+        /* D3 Node Text Style */
+        .node text {
+            fill: #E5E7EB; /* Light text color */
+            font-size: 14px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chart-container" id="chart-container">
+        <!-- D3 SVG will be appended here -->
+    </div>
+
+    <script>
+        // Use a self-invoking function to encapsulate the D3 logic
+        (function() {
+            // Data structure based on the image
+            const data = {
+                "name": "Machine Learning",
+                "children": [
+                    {
+                        "name": "Supervised",
+                        "children": [
+                            {
+                                "name": "Classification",
+                                "children": [
+                                    {"name": "Logistic"},
+                                    {"name": "Decision Tree"},
+                                    {"name": "Random"},
+                                    {"name": "Support Vector Machine (SVM)"}
+                                ]
+                            },
+                            {
+                                "name": "Regression",
+                                "children": [
+                                    {"name": "Linear Regression"},
+                                    {"name": "Ridge/Lasso Regression"},
+                                    {"name": "Decision Tree Regression"},
+                                    {"name": "SVR (Support Vector Regression)"}
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Unsupervised Learning",
+                        "children": [
+                            {
+                                "name": "Clustering",
+                                "children": [
+                                    {"name": "K-"},
+                                    {"name": "Hierarchical Clustering"},
+                                    {"name": "DBSCAN"}
+                                ]
+                            },
+                            {
+                                "name": "Dimensionality Reduction",
+                                "children": [
+                                    {"name": "PCA"},
+                                    {"name": "tSNE"},
+                                    {"name": "UMAP"}
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            // Define dynamic colors based on depth (hierarchy level)
+            const depthColors = {
+                0: "#DAD2D8", // Light Grey for root (Depth 0)
+                1: "#51E5FF", // Cyan for level 1
+                2: "#EC9A29", // Gold/Orange for level 2
+                3: "#0EA5E9", // Sky Blue for level 3
+                4: "#EC4899"  // Pink for level 4 (just in case)
+            };
+
+            const container = d3.select("#chart-container");
+            const margin = { top: 50, right: 200, bottom: 50, left: 100 };
+            
+            let width, height, innerWidth, innerHeight;
+
+            const svg = container.append("svg")
+                .attr("class", "w-full h-full");
+                
+            const g = svg.append("g");
+            
+            const tree = d3.tree();
+
+            // Function to recalculate dimensions and update the chart
+            function drawChart() {
+                // Get container dimensions
+                width = document.getElementById('chart-container').clientWidth;
+                height = document.getElementById('chart-container').clientHeight;
+                
+                innerWidth = width - margin.left - margin.right;
+                innerHeight = height - margin.top - margin.bottom;
+
+                // Update SVG and G element dimensions/transforms
+                svg.attr("width", width).attr("height", height);
+                g.attr("transform", `translate(${margin.left}, ${margin.top})`);
+                
+                // Set the size of the tree layout (x and y are swapped for horizontal layout)
+                tree.size([innerHeight, innerWidth]);
+
+                // 1. Convert the data to a hierarchy
+                const root = d3.hierarchy(data);
+
+                // 2. Compute the positions of the nodes
+                const treeData = tree(root);
+
+                // 3. Create Gradient Definitions in SVG <defs>
+                svg.select("defs").remove();
+                const defs = svg.append("defs");
+                
+                const nodesByDepth = Array.from(d3.group(treeData.descendants(), d => d.depth));
+                
+                nodesByDepth.forEach(([depth]) => {
+                    const color = depthColors[depth] || depthColors[3]; 
+                    const id = `node-gradient-${depth}`;
+
+                    const linearGradient = defs.append("linearGradient")
+                        .attr("id", id)
+                        .attr("x1", "0%")
+                        .attr("y1", "0%")
+                        .attr("x2", "100%")
+                        .attr("y2", "0%");
+
+                    // Light Color Stop (Left side) - Uses hierarchy color
+                    linearGradient.append("stop")
+                        .attr("offset", "0%")
+                        .attr("stop-color", color)
+                        .attr("stop-opacity", 1);
+                    
+                    // Dark Color Stop (Right side - fading into background color)
+                    linearGradient.append("stop")
+                        .attr("offset", "100%")
+                        .attr("stop-color", "#111827") 
+                        .attr("stop-opacity", 1);
+                });
+
+                // 4. Select/Join Nodes (Enter/Update/Exit)
+                const nodes = g.selectAll(".node")
+                    .data(treeData.descendants(), d => d.id);
+
+                // ENTER selection
+                const nodeEnter = nodes.enter().append("g")
+                    .attr("class", "node");
+
+                // Add text to entering nodes
+                nodeEnter.append("text")
+                    .attr("dy", ".35em")
+                    .attr("x", 10) // Offset text a little from the left edge
+                    .attr("text-anchor", "start")
+                    .text(d => d.data.name);
+
+                // Add the rectangular background and border to entering nodes
+                nodeEnter.insert("rect", "text") 
+                    .attr("rx", 6)
+                    .attr("ry", 6)
+                    .attr("fill", "#1F2937") // Slightly lighter dark background for the box
+                    .attr("stroke-width", 2);
+
+                // MERGE selection (all nodes: entering + existing)
+                const node = nodes.merge(nodeEnter);
+
+                // 5. Measure Text Widths on all nodes
+                const textWidths = [];
+                node.selectAll("text").each(function(d) {
+                    textWidths.push({
+                        id: d.id, 
+                        width: this.getComputedTextLength()
+                    });
+                });
+                const measuredWidths = new Map(textWidths.map(i => [i.id, i.width]));
+
+                // CONSTANTS needed for both node and link sizing
+                const PADDING = 50; 
+                const RECT_Y_OFFSET = -15; // Box height / 2
+                const RECT_X_START = -(PADDING/2 - 10); // -15 (Left edge offset for text alignment)
+
+                // 6. Update Rect and Position on all nodes (sizing the boxes)
+                node.select("rect")
+                    .attr("width", d => measuredWidths.get(d.id) + PADDING)
+                    .attr("height", 30)
+                    .attr("x", RECT_X_START) // Use the constant
+                    .attr("y", RECT_Y_OFFSET) // Use the constant
+                    // Apply dynamic gradient border
+                    .attr("stroke", d => `url(#node-gradient-${d.depth})`); 
+
+                // Update position for all nodes
+                node.transition()
+                    .duration(500)
+                    .attr("transform", d => `translate(${d.y}, ${d.x})`);
+                
+                // EXIT selection
+                nodes.exit().remove();
+                
+                // 7. Draw and Update Links (Placed behind nodes using insert)
+                const links = g.selectAll(".link")
+                    .data(treeData.links(), d => d.target.id);
+                
+                // EXIT
+                links.exit().remove();
+
+                // ENTER (Insert new links BEFORE the node groups to place them underneath)
+                const linkEnter = links.enter().insert("path", ".node") 
+                    .attr("class", "link");
+
+                // MERGE
+                const linkJoin = links.merge(linkEnter);
+                
+                // Update path definition on the merged selection
+                linkJoin.transition()
+                    .duration(500)
+                    .attr("d", d => {
+                        const source = d.source;
+                        const target = d.target;
+                        
+                        // Calculate Source X: Right edge of the source node's box
+                        const sourceTextWidth = measuredWidths.get(source.id) || 0;
+                        const sourceRectWidth = sourceTextWidth + PADDING;
+                        
+                        // Right Edge = source.y + RECT_X_START + sourceRectWidth
+                        const sourceX = source.y + RECT_X_START + sourceRectWidth;
+
+                        // Calculate Target X: Left edge of the target node's box
+                        // Left Edge = Target.y + RECT_X_START
+                        const targetX = target.y + RECT_X_START;
+
+                        // Define the horizontal midpoint for the elbow bend.
+                        const midX = sourceX + (targetX - sourceX) / 2;
+
+                        // Use a Cubic Bezier curve (C) to force a smooth 90-degree elbow.
+                        // The explicit stroke-linejoin: round in CSS makes the corner look rounded, 
+                        // achieving the "45 degree angle but rounded" appearance for a structured flow.
+                        return `M${sourceX},${source.x}
+                                C${midX},${source.x}
+                                 ${midX},${target.x}
+                                 ${targetX},${target.x}`;
+                    });
+            }
+
+            // Initial draw and setup resize listener
+            drawChart();
+            window.addEventListener('resize', drawChart);
+
+        })();
+    </script>
+</body>
+</html>
