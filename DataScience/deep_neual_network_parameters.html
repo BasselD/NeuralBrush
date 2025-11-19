@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neural Network Anatomy (Correct Bias)</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #150A1E; color: white; margin:0; }
+    .neuron { fill: #B9FFB7; stroke: white; stroke-width: 1.5; cursor: pointer; }
+    .bias { fill: #FFDC5E; stroke: white; stroke-width: 1; }
+    .connection { stroke: #DB324D; stroke-width: 1.2; opacity: 0.7; }
+    .bias-connection { stroke: #FFDC5E; stroke-width: 1; opacity: 0.9; stroke-dasharray: 3,2; }
+    .highlight { stroke: #FFDC5E !important; opacity: 1 !important; stroke-width: 2 !important; }
+    .label { fill: #FFDC5E; font-size: 16px; text-anchor: middle; }
+    .tooltip {
+      position: absolute;
+      background: #FFDC5E;
+      color: #150A1E;
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+    }
+    .button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: #FFDC5E;
+      color: #150A1E;
+      border: none;
+      padding: 10px 20px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <button class="button">Replay Animation</button>
+  <svg width="1100" height="600"></svg>
+  <div class="tooltip"></div>
+
+  <script>
+    const svg = d3.select("svg"),
+          width = +svg.attr("width"),
+          height = +svg.attr("height"),
+          tooltip = d3.select(".tooltip"),
+          button = d3.select(".button");
+
+    const neuronRadius = 15;
+    const biasRadius = 6;
+
+    // Layers: multiple hidden layers for realism
+    const layers = [
+      { name: "Input Layer", neurons: 4 },
+      { name: "Hidden Layer 1", neurons: 6 },
+      { name: "Hidden Layer 2", neurons: 5 },
+      { name: "Output Layer", neurons: 3 }
+    ];
+
+    const layerSpacing = width / (layers.length + 1);
+
+    function buildNetwork() {
+      svg.selectAll("*").remove();
+
+      // Create neurons
+      const neurons = [];
+      layers.forEach((layer, i) => {
+        const ySpacing = height / (layer.neurons + 1);
+        for (let j = 0; j < layer.neurons; j++) {
+          neurons.push({
+            id: `${layer.name}-${j + 1}`,
+            layer: layer.name,
+            layerIndex: i,
+            x: (i + 1) * layerSpacing,
+            y: (j + 1) * ySpacing
+          });
+        }
+      });
+
+      // Connections between neurons (layer to layer)
+      const connections = [];
+      neurons.forEach(n1 => {
+        neurons.forEach(n2 => {
+          if (n2.layerIndex === n1.layerIndex + 1) {
+            connections.push({ source: n1, target: n2 });
+          }
+        });
+      });
+
+      // Bias nodes: attach to each neuron except input neurons
+      const biases = [];
+      const biasConnections = [];
+      neurons.forEach(n => {
+        if (n.layerIndex > 0) {
+          const biasNode = {
+            id: `${n.id}-bias`,
+            neuron: n,
+            x: n.x - 35,
+            y: n.y - 15
+          };
+          biases.push(biasNode);
+          biasConnections.push({ source: biasNode, target: n });
+        }
+      });
+
+      // Draw connections
+      const link = svg.append("g").selectAll("line")
+        .data(connections)
+        .enter()
+        .append("line")
+        .attr("class", "connection")
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.source.x)
+        .attr("y2", d => d.source.y);
+
+      // Draw bias connections
+      const biasLink = svg.append("g").selectAll("line")
+        .data(biasConnections)
+        .enter()
+        .append("line")
+        .attr("class", "bias-connection")
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.source.x)
+        .attr("y2", d => d.source.y);
+
+      // Draw neurons
+      const node = svg.append("g").selectAll("circle")
+        .data(neurons)
+        .enter()
+        .append("circle")
+        .attr("class", "neuron")
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y)
+        .attr("r", 0)
+        .on("mouseover", function(e, d) {
+          tooltip.style("opacity", 1).html(`<b>${d.layer}</b><br>Neuron: ${d.id}`);
+          link.classed("highlight", l => l.source === d || l.target === d);
+          d3.select(this).transition().duration(150).attr("r", neuronRadius + 4);
+        })
+        .on("mousemove", (e) => {
+          tooltip.style("left", (e.pageX + 10) + "px")
+                 .style("top", (e.pageY - 20) + "px");
+        })
+        .on("mouseout", function() {
+          tooltip.style("opacity", 0);
+          link.classed("highlight", false);
+          d3.select(this).transition().duration(150).attr("r", neuronRadius);
+        });
+
+      // Draw bias nodes
+      const biasNodes = svg.append("g").selectAll("circle")
+        .data(biases)
+        .enter()
+        .append("circle")
+        .attr("class", "bias")
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y)
+        .attr("r", 0)
+        .on("mouseover", function(e, d) {
+          tooltip.style("opacity", 1).html(
+            `<b>Bias</b><br>Added to weighted sum before activation`
+          );
+        })
+        .on("mousemove", (e) => {
+          tooltip.style("left", (e.pageX + 10) + "px")
+                 .style("top", (e.pageY - 20) + "px");
+        })
+        .on("mouseout", () => tooltip.style("opacity", 0));
+
+      // Animate neurons
+      node.transition()
+        .delay((d, i) => i * 120)
+        .duration(500)
+        .attr("r", neuronRadius)
+        .on("end", function(d, i) {
+          if (i === neurons.length - 1) animateConnections();
+        });
+
+      // Animate biases
+      biasNodes.transition()
+        .delay((d, i) => i * 100)
+        .duration(500)
+        .attr("r", biasRadius);
+
+      // Animate connections
+      function animateConnections() {
+        link.transition()
+          .delay((d, i) => i * 5)
+          .duration(600)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+
+        biasLink.transition()
+          .delay((d, i) => i * 5)
+          .duration(600)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+      }
+
+      // Layer labels
+      layers.forEach((layer, i) => {
+        svg.append("text")
+          .attr("x", (i + 1) * layerSpacing)
+          .attr("y", 40)
+          .attr("class", "label")
+          .text(layer.name);
+      });
+    }
+
+    // Build the network on load
+    buildNetwork();
+
+    // Replay button
+    button.on("click", () => buildNetwork());
+  </script>
+</body>
+</html>
