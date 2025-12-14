@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Machine Learning Hierarchy Flow</title>
+    <title>Detailed Machine Learning Hierarchy Flow</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -13,23 +13,22 @@
             font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Hide scrollbars, D3 handles positioning */
+            /* REMOVED: overflow: hidden; -> Now allows scrolling */
         }
 
-        /* SVG Container */
+        /* SVG Container - Removed 100vh height to allow it to grow */
         .chart-container {
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start; /* Align chart to the top */
             width: 100%;
-            height: 100vh;
+            min-height: 300vh; /* Ensures minimum screen size */
         }
 
         /* D3 Link Style (The connecting lines) */
         .link {
             fill: none;
             stroke-width: 2px;
-            /* Changed color for better contrast */
             stroke: #6B7280; 
             /* Added for smooth, rounded corners */
             stroke-linecap: round; 
@@ -53,29 +52,76 @@
     <script>
         // Use a self-invoking function to encapsulate the D3 logic
         (function() {
-            // Data structure based on the image
+            // Updated Data structure based on the new, detailed hierarchy
             const data = {
                 "name": "Machine Learning",
                 "children": [
                     {
-                        "name": "Supervised",
+                        "name": "Supervised Learning",
                         "children": [
                             {
-                                "name": "Classification",
+                                "name": "Standard Algorithms",
                                 "children": [
-                                    {"name": "Logistic"},
-                                    {"name": "Decision Tree"},
-                                    {"name": "Random"},
-                                    {"name": "Support Vector Machine (SVM)"}
+                                    {
+                                        "name": "Classification",
+                                        "children": [
+                                            {"name": "Logistic Regression"},
+                                            {"name": "K-Nearest Neighbors (KNN)"},
+                                            {"name": "Naive Bayes"},
+                                            {"name": "Decision Tree Classifier"},
+                                            {"name": "Support Vector Machine (SVM)"},
+                                            {"name": "Linear Discriminant Analysis (LDA)"},
+                                            {"name": "Quadratic Discriminant Analysis (QDA)"}
+                                        ]
+                                    },
+                                    {
+                                        "name": "Regression",
+                                        "children": [
+                                            {"name": "Linear Regression"},
+                                            {"name": "Ridge / Lasso / ElasticNet"},
+                                            {"name": "Polynomial Regression"},
+                                            {"name": "Decision Tree Regressor"},
+                                            {"name": "KNN Regressor"},
+                                            {"name": "Support Vector Regressor (SVR)"}
+                                        ]
+                                    }
                                 ]
                             },
                             {
-                                "name": "Regression",
+                                "name": "Advanced Algorithms (Ensemble / Meta-Models)",
                                 "children": [
-                                    {"name": "Linear Regression"},
-                                    {"name": "Ridge/Lasso Regression"},
-                                    {"name": "Decision Tree Regression"},
-                                    {"name": "SVR (Support Vector Regression)"}
+                                    {
+                                        "name": "Bagging",
+                                        "children": [
+                                            {"name": "BaggingClassifier / BaggingRegressor"},
+                                            {"name": "Random Forest"},
+                                            {"name": "Extra Trees"}
+                                        ]
+                                    },
+                                    {
+                                        "name": "Boosting",
+                                        "children": [
+                                            {"name": "AdaBoost"},
+                                            {"name": "Gradient Boosting Machines (GBM)"},
+                                            {"name": "XGBoost"},
+                                            {"name": "LightGBM"},
+                                            {"name": "CatBoost"}
+                                        ]
+                                    },
+                                    {
+                                        "name": "Stacking",
+                                        "children": [
+                                            {"name": "StackingClassifier"},
+                                            {"name": "StackingRegressor"}
+                                        ]
+                                    },
+                                    {
+                                        "name": "Voting / Blending",
+                                        "children": [
+                                            {"name": "VotingClassifier"},
+                                            {"name": "Averaging Regressor"}
+                                        ]
+                                    }
                                 ]
                             }
                         ]
@@ -86,19 +132,45 @@
                             {
                                 "name": "Clustering",
                                 "children": [
-                                    {"name": "K-"},
+                                    {"name": "K-Means"},
                                     {"name": "Hierarchical Clustering"},
-                                    {"name": "DBSCAN"}
+                                    {"name": "DBSCAN / HDBSCAN"},
+                                    {"name": "Mean Shift"},
+                                    {"name": "Gaussian Mixture Models (GMM)"},
+                                    {"name": "Spectral Clustering"}
                                 ]
                             },
                             {
                                 "name": "Dimensionality Reduction",
                                 "children": [
                                     {"name": "PCA"},
-                                    {"name": "tSNE"},
-                                    {"name": "UMAP"}
+                                    {"name": "Kernel PCA"},
+                                    {"name": "t-SNE"},
+                                    {"name": "UMAP"},
+                                    {"name": "Autoencoders"}
+                                ]
+                            },
+                            {
+                                "name": "Association Rule Learning",
+                                "children": [
+                                    {"name": "Apriori"},
+                                    {"name": "FP-Growth"},
+                                    {"name": "Eclat"}
                                 ]
                             }
+                        ]
+                    },
+                    {
+                        "name": "Reinforcement Learning",
+                        "children": [
+                            {"name": "Q-Learning"},
+                            {"name": "SARSA"},
+                            {"name": "Deep Q-Networks (DQN)"},
+                            {"name": "Policy Gradient Methods"},
+                            {"name": "Actor–Critic (A2C, A3C)"},
+                            {"name": "PPO"},
+                            {"name": "DDPG"},
+                            {"name": "SAC"}
                         ]
                     }
                 ]
@@ -107,19 +179,21 @@
             // Define dynamic colors based on depth (hierarchy level)
             const depthColors = {
                 0: "#DAD2D8", // Light Grey for root (Depth 0)
-                1: "#51E5FF", // Cyan for level 1
-                2: "#EC9A29", // Gold/Orange for level 2
-                3: "#0EA5E9", // Sky Blue for level 3
-                4: "#EC4899"  // Pink for level 4 (just in case)
+                1: "#51E5FF", // Cyan for level 1: Supervised, Unsupervised, RL
+                2: "#EC9A29", // Gold/Orange for level 2: Standard, Advanced, Clustering, DR, Assoc.
+                3: "#0EA5E9", // Sky Blue for level 3: Classification, Regression, Bagging, Boosting, etc.
+                4: "#EC4899", // Pink for level 4 (most leaf nodes)
+                5: "#FBBF24"  // Amber/Yellow for depth 5 (to ensure distinct color for max depth)
             };
 
             const container = d3.select("#chart-container");
-            const margin = { top: 50, right: 200, bottom: 50, left: 100 };
+            // Increased margin.top to 120 for more padding above the root node
+            const margin = { top: 2000, right: 100, bottom: 50, left: 30 };
             
-            let width, height, innerWidth, innerHeight;
+            let width;
 
             const svg = container.append("svg")
-                .attr("class", "w-full h-full");
+                .attr("class", "w-full"); // Removed height attribute here
                 
             const g = svg.append("g");
             
@@ -127,19 +201,18 @@
 
             // Function to recalculate dimensions and update the chart
             function drawChart() {
-                // Get container dimensions
+                // Get container width
                 width = document.getElementById('chart-container').clientWidth;
-                height = document.getElementById('chart-container').clientHeight;
                 
-                innerWidth = width - margin.left - margin.right;
-                innerHeight = height - margin.top - margin.bottom;
+                const innerWidth = width - margin.left - margin.right;
 
-                // Update SVG and G element dimensions/transforms
-                svg.attr("width", width).attr("height", height);
+                // Update G element dimensions/transforms
                 g.attr("transform", `translate(${margin.left}, ${margin.top})`);
                 
-                // Set the size of the tree layout (x and y are swapped for horizontal layout)
-                tree.size([innerHeight, innerWidth]);
+                // --- CRITICAL CHANGE: Use nodeSize instead of tree.size ---
+                // [Vertical spacing (x-axis in horizontal layout), Horizontal spacing (y-axis)]
+                // We set a fixed vertical spacing of 50px between nodes
+                tree.nodeSize([50, 250]); 
 
                 // 1. Convert the data to a hierarchy
                 const root = d3.hierarchy(data);
@@ -147,14 +220,23 @@
                 // 2. Compute the positions of the nodes
                 const treeData = tree(root);
 
-                // 3. Create Gradient Definitions in SVG <defs>
+                // 3. --- CRITICAL CHANGE: Calculate Required Height ---
+                // Find the lowest point (largest 'x' value) and add margins/padding
+                const max_x = d3.max(treeData.descendants(), d => d.x);
+                // Calculate height: max x position + top/bottom margins + extra padding (100)
+                const requiredHeight = max_x + margin.top + margin.bottom + 100; 
+
+                // Set the SVG height based on the calculation to force vertical scroll
+                svg.attr("height", requiredHeight);
+
+                // 4. Create Gradient Definitions in SVG <defs>
                 svg.select("defs").remove();
                 const defs = svg.append("defs");
                 
                 const nodesByDepth = Array.from(d3.group(treeData.descendants(), d => d.depth));
                 
                 nodesByDepth.forEach(([depth]) => {
-                    const color = depthColors[depth] || depthColors[3]; 
+                    const color = depthColors[depth] || depthColors[4]; 
                     const id = `node-gradient-${depth}`;
 
                     const linearGradient = defs.append("linearGradient")
@@ -177,7 +259,7 @@
                         .attr("stop-opacity", 1);
                 });
 
-                // 4. Select/Join Nodes (Enter/Update/Exit)
+                // 5. Select/Join Nodes (Enter/Update/Exit)
                 const nodes = g.selectAll(".node")
                     .data(treeData.descendants(), d => d.id);
 
@@ -202,7 +284,7 @@
                 // MERGE selection (all nodes: entering + existing)
                 const node = nodes.merge(nodeEnter);
 
-                // 5. Measure Text Widths on all nodes
+                // 6. Measure Text Widths on all nodes
                 const textWidths = [];
                 node.selectAll("text").each(function(d) {
                     textWidths.push({
@@ -217,7 +299,7 @@
                 const RECT_Y_OFFSET = -15; // Box height / 2
                 const RECT_X_START = -(PADDING/2 - 10); // -15 (Left edge offset for text alignment)
 
-                // 6. Update Rect and Position on all nodes (sizing the boxes)
+                // 7. Update Rect and Position on all nodes (sizing the boxes)
                 node.select("rect")
                     .attr("width", d => measuredWidths.get(d.id) + PADDING)
                     .attr("height", 30)
@@ -234,7 +316,7 @@
                 // EXIT selection
                 nodes.exit().remove();
                 
-                // 7. Draw and Update Links (Placed behind nodes using insert)
+                // 8. Draw and Update Links (Placed behind nodes using insert)
                 const links = g.selectAll(".link")
                     .data(treeData.links(), d => d.target.id);
                 
@@ -270,8 +352,6 @@
                         const midX = sourceX + (targetX - sourceX) / 2;
 
                         // Use a Cubic Bezier curve (C) to force a smooth 90-degree elbow.
-                        // The explicit stroke-linejoin: round in CSS makes the corner look rounded, 
-                        // achieving the "45 degree angle but rounded" appearance for a structured flow.
                         return `M${sourceX},${source.x}
                                 C${midX},${source.x}
                                  ${midX},${target.x}
@@ -281,6 +361,7 @@
 
             // Initial draw and setup resize listener
             drawChart();
+            // We still need to redraw on resize to adjust horizontal width
             window.addEventListener('resize', drawChart);
 
         })();
