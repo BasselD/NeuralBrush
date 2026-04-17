@@ -560,4 +560,469 @@ Once you add:
 
 then the analysis gets much nastier, in a good way.
 
-If you want, next I can give you a **single polished Python script** that generates a full 4-chart executive report from `df`.
+----
+Below is a clean way to build the **actual slide content in Python** from the SQL output.
+
+Assume your Teradata result is loaded into a dataframe called `scorecard_df` with these columns:
+
+* `AdmittingFacilityNameClean`
+* `AttendingProviderHospitalGroupName_VOP`
+* `acute_events`
+* `obs_events`
+* `total_events`
+* `unique_members`
+* `events_per_member`
+* `facility_total_events`
+* `facility_share_pct`
+* `obs_rate_pct`
+* `acute_rate_pct`
+* `group_rank_in_facility`
+
+---
+
+# 1. Setup and styling
+
+```python
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.ticker import PercentFormatter
+from textwrap import fill
+
+# ---------- Style ----------
+ACCENT = "#002850"         # RGB(0,40,80)
+ACCENT_2 = "#3E6C8F"
+LIGHT_BLUE = "#9DB7C8"
+PALE_BLUE = "#D9E6EE"
+OBS_COLOR = "#2CB1BC"
+ACUTE_COLOR = ACCENT
+GRID = "#D9DDE3"
+TEXT = "#243447"
+MUTED = "#6B7280"
+BG = "white"
+
+plt.rcParams.update({
+    "figure.facecolor": BG,
+    "axes.facecolor": BG,
+    "axes.edgecolor": GRID,
+    "axes.labelcolor": TEXT,
+    "text.color": TEXT,
+    "xtick.color": TEXT,
+    "ytick.color": TEXT,
+    "font.size": 11,
+    "axes.titleweight": "bold",
+    "axes.titlesize": 18
+})
+
+# ---------- Clean ----------
+df = scorecard_df.copy()
+
+df["AdmittingFacilityNameClean"] = df["AdmittingFacilityNameClean"].fillna("Unknown Facility")
+df["AttendingProviderHospitalGroupName_VOP"] = df["AttendingProviderHospitalGroupName_VOP"].fillna("Unassigned / Unknown")
+
+# optional: keep only meaningful rows
+df = df[df["total_events"] > 0].copy()
+
+# facility order by total volume
+facility_order = (
+    df.groupby("AdmittingFacilityNameClean")["facility_total_events"]
+      .max()
+      .sort_values(ascending=True)
+      .index
+      .tolist()
+)
+
+group_order = (
+    df.groupby("AttendingProviderHospitalGroupName_VOP")["total_events"]
+      .sum()
+      .sort_values(ascending=False)
+      .index
+      .tolist()
+)
+
+df["AdmittingFacilityNameClean"] = pd.Categorical(
+    df["AdmittingFacilityNameClean"], categories=facility_order, ordered=True
+)
+df["AttendingProviderHospitalGroupName_VOP"] = pd.Categorical(
+    df["AttendingProviderHospitalGroupName_VOP"], categories=group_order, ordered=True
+)
+```
+
+---
+
+# 2. Helper functions for slide headlines and takeaways
+
+This is the part most people skip, then end up manually typing vague slide titles at midnight.
+
+```python
+def top_facility_group_takeaway(data: pd.DataFrame) -> str:
+    x = data.sort_values("total_events", ascending=False).iloc[0]
+    return (
+        f"{x['AttendingProviderHospitalGroupName_VOP']} has the largest identified footprint "
+        f"at {x['AdmittingFacilityNameClean']}, with {int(x['total_events'])} events "
+        f"representing {x['facility_share_pct']:.0%} of that facility's observed volume."
+    )
+
+def highest_obs_takeaway(data: pd.DataFrame, min_events: int = 10) -> str:
+    x = data[data["total_events"] >= min_events].sort_values("obs_rate_pct", ascending=False).iloc[0]
+    return (
+        f"{x['AdmittingFacilityNameClean']} / {x['AttendingProviderHospitalGroupName_VOP']} shows the highest "
+        f"observation mix among meaningful-volume combinations, with an OBS rate of {x['obs_rate_pct']:.0%}."
+    )
+
+def highest_concentration_takeaway(data: pd.DataFrame) -> str:
+    conc = (
+        data.groupby("AdmittingFacilityNameClean")
+            .apply(lambda g: (g["facility_share_pct"]**2).sum())
+            .sort_values(ascending=False)
+    )
+    fac = conc.index[0]
+    return f"{fac} appears most concentrated, with volume flowing disproportionately through a smaller set of hospitalist groups."
+
+def focused_facility_takeaway(data: pd.DataFrame, facility: str) -> str:
+    x = (data[data["AdmittingFacilityNameClean"] == facility]
+         .sort_values("total_events", ascending=False))
+    if x.empty:
+        return f"No rows found for {facility}."
+    leader = x.iloc[0]
+    if len(x) > 1:
+        runner_up = x.iloc[1]
+        return (
+            f"At {facility}, {leader['AttendingProviderHospitalGroupName_VOP']} leads with {int(leader['total_events'])} events "
+            f"vs. {int(runner_up['total_events'])} for {runner_up['AttendingProviderHospitalGroupName_VOP']}."
+        )
+    return f"At {facility}, {leader['AttendingProviderHospitalGroupName_VOP']} accounts for nearly all identified attributed volume."
+
+print(top_facility_group_takeaway(df))
+print(highest_obs_takeaway(df))
+print(highest_concentration_takeaway(df))
+```
+
+---
+
+# 3. Slide 1. Share of business by facility
+
+This is the slide Dr. T probably cares about most.
+
+## What it says
+
+At each facility, which hospitalist group is getting the business.
+
+```python
+def slide1_share_of_business(data: pd.DataFrame, top_n_groups_per_facility: int = 4):
+    plot_df = data[data["group_rank_in_facility"] <= top_n_groups_per_facility].copy()
+    
+    pivot = plot_df.pivot_table(
+        index="AdmittingFacilityNameClean",
+        columns="AttendingProviderHospitalGroupName_VOP",
+        values="facility_share_pct",
+        fill_value=0
+    )
+    
+    fig, ax = plt.subplots(figsize=(14, 8))
+    left = np.zeros(len(pivot))
+    
+    palette = [ACCENT, ACCENT_2, LIGHT_BLUE, OBS_COLOR, "#7A9E7E", "#E7A977", "#A78BFA", "#94A3B8"]
+    
+    for i, col in enumerate(pivot.columns):
+        vals = pivot[col].values
+        ax.barh(
+            pivot.index.astype(str),
+            vals,
+            left=left,
+            label=col,
+            color=palette[i % len(palette)],
+            edgecolor="white",
+            height=0.75
+        )
+        
+        for y, (l, v) in enumerate(zip(left, vals)):
+            if v >= 0.08:
+                ax.text(l + v/2, y, f"{v:.0%}", ha="center", va="center", color="white", fontsize=9, fontweight="bold")
+        
+        left += vals
+
+    ax.set_title("Hospitalist Group Share of Business by Facility", loc="left", pad=16)
+    ax.text(
+        0, 1.04,
+        fill(highest_concentration_takeaway(data), 105),
+        transform=ax.transAxes, fontsize=11, color=MUTED
+    )
+    ax.set_xlabel("Share of Facility Volume")
+    ax.xaxis.set_major_formatter(PercentFormatter(1.0))
+    ax.grid(axis="x", color=GRID, linewidth=0.8)
+    ax.set_axisbelow(True)
+    ax.legend(title="Hospitalist Group", bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False)
+    plt.tight_layout()
+    return fig
+
+fig1 = slide1_share_of_business(df)
+plt.show()
+```
+
+---
+
+# 4. Slide 2. Volume scorecard by facility and group
+
+This is the direct count view. Less pretty than the share chart, more operationally useful.
+
+```python
+def slide2_volume_by_facility_group(data: pd.DataFrame, top_n_groups_per_facility: int = 3):
+    plot_df = data[data["group_rank_in_facility"] <= top_n_groups_per_facility].copy()
+    plot_df = plot_df.sort_values(["AdmittingFacilityNameClean", "total_events"], ascending=[True, False])
+
+    facilities = plot_df["AdmittingFacilityNameClean"].astype(str).unique()
+    fig, axes = plt.subplots(len(facilities), 1, figsize=(14, 2.6 * len(facilities)), sharex=False)
+    if len(facilities) == 1:
+        axes = [axes]
+
+    palette = [ACCENT, ACCENT_2, LIGHT_BLUE, OBS_COLOR, "#7A9E7E", "#E7A977"]
+
+    for ax, fac in zip(axes, facilities):
+        sub = plot_df[plot_df["AdmittingFacilityNameClean"].astype(str) == fac].copy()
+        sub = sub.sort_values("total_events", ascending=True)
+
+        colors = [palette[i % len(palette)] for i in range(len(sub))]
+        ax.barh(sub["AttendingProviderHospitalGroupName_VOP"].astype(str), sub["total_events"], color=colors, edgecolor="white")
+
+        for i, (_, row) in enumerate(sub.iterrows()):
+            label = f"{int(row['total_events'])} | {row['facility_share_pct']:.0%}"
+            ax.text(row["total_events"] + max(sub["total_events"]) * 0.01, i, label, va="center", fontsize=10)
+
+        ax.set_title(fac, loc="left", fontsize=13, color=TEXT, pad=8)
+        ax.grid(axis="x", color=GRID, linewidth=0.8)
+        ax.set_axisbelow(True)
+        ax.set_ylabel("")
+
+    fig.suptitle("Comparative Hospitalist Group Volume Within Each Facility", x=0.01, ha="left", fontsize=18, fontweight="bold")
+    fig.text(0.01, 0.98, fill(top_facility_group_takeaway(data), 110), fontsize=11, color=MUTED, va="top")
+    fig.supxlabel("Authorization Events | label shows count and share of facility volume")
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    return fig
+
+fig2 = slide2_volume_by_facility_group(df)
+plt.show()
+```
+
+---
+
+# 5. Slide 3. Acute vs OBS mix by facility-group
+
+This is your sharper version of the heatmap. I would focus on **OBS rate** since that is the more interesting differentiator.
+
+```python
+def slide3_obs_heatmap(data: pd.DataFrame, min_events: int = 10):
+    plot_df = data[data["total_events"] >= min_events].copy()
+
+    heat = plot_df.pivot_table(
+        index="AdmittingFacilityNameClean",
+        columns="AttendingProviderHospitalGroupName_VOP",
+        values="obs_rate_pct",
+        fill_value=np.nan
+    )
+
+    ann = plot_df.pivot_table(
+        index="AdmittingFacilityNameClean",
+        columns="AttendingProviderHospitalGroupName_VOP",
+        values="total_events",
+        fill_value=0
+    )
+
+    fig, ax = plt.subplots(figsize=(14, 7))
+    im = ax.imshow(heat.values, aspect="auto", cmap="YlOrRd", vmin=0, vmax=max(0.5, np.nanmax(heat.values)))
+
+    ax.set_xticks(np.arange(len(heat.columns)))
+    ax.set_yticks(np.arange(len(heat.index)))
+    ax.set_xticklabels(heat.columns, rotation=45, ha="right")
+    ax.set_yticklabels(heat.index)
+
+    for i in range(len(heat.index)):
+        for j in range(len(heat.columns)):
+            val = heat.iloc[i, j]
+            n = ann.iloc[i, j]
+            if pd.notna(val):
+                txt = f"{val:.0%}\n(n={int(n)})"
+                ax.text(j, i, txt, ha="center", va="center", fontsize=9, color=TEXT)
+
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_label("OBS Rate")
+
+    ax.set_title("Observation Mix by Facility and Hospitalist Group", loc="left", pad=16)
+    ax.text(
+        0, 1.04,
+        fill(highest_obs_takeaway(data, min_events=min_events), 105),
+        transform=ax.transAxes, fontsize=11, color=MUTED
+    )
+
+    plt.tight_layout()
+    return fig
+
+fig3 = slide3_obs_heatmap(df, min_events=10)
+plt.show()
+```
+
+---
+
+# 6. Slide 4. Focus slide for key hospitals
+
+This is where you can give Dr. T the exact “Harlingen Medical Center. Beyond vs Catalyst” style view.
+
+```python
+def slide4_facility_focus(data: pd.DataFrame, facilities: list, top_n: int = 4):
+    plot_df = data[data["AdmittingFacilityNameClean"].astype(str).isin(facilities)].copy()
+    plot_df = plot_df.sort_values(["AdmittingFacilityNameClean", "total_events"], ascending=[True, False])
+
+    n = len(facilities)
+    fig, axes = plt.subplots(1, n, figsize=(6 * n, 6), sharey=False)
+    if n == 1:
+        axes = [axes]
+
+    palette = [ACCENT, ACCENT_2, LIGHT_BLUE, OBS_COLOR, "#7A9E7E", "#E7A977"]
+
+    for ax, fac in zip(axes, facilities):
+        sub = plot_df[plot_df["AdmittingFacilityNameClean"].astype(str) == fac].head(top_n).copy()
+        sub = sub.sort_values("total_events", ascending=True)
+
+        colors = [palette[i % len(palette)] for i in range(len(sub))]
+        ax.barh(sub["AttendingProviderHospitalGroupName_VOP"].astype(str), sub["total_events"], color=colors)
+
+        for i, (_, row) in enumerate(sub.iterrows()):
+            ax.text(
+                row["total_events"] + max(sub["total_events"]) * 0.02,
+                i,
+                f"{int(row['total_events'])} | {row['facility_share_pct']:.0%}",
+                va="center",
+                fontsize=10
+            )
+
+        ax.set_title(fac, loc="left", fontsize=14, pad=10)
+        ax.grid(axis="x", color=GRID, linewidth=0.8)
+        ax.set_axisbelow(True)
+        ax.set_ylabel("")
+
+    fig.suptitle("Focused Facility Comparisons", x=0.01, ha="left", fontsize=18, fontweight="bold")
+    lines = [focused_facility_takeaway(data, f) for f in facilities]
+    fig.text(0.01, 0.98, "\n".join(lines), fontsize=11, color=MUTED, va="top")
+    fig.supxlabel("Authorization Events | label shows count and share of facility volume")
+    plt.tight_layout(rect=[0, 0, 1, 0.92])
+    return fig
+
+fig4 = slide4_facility_focus(df, facilities=["Harlingen Medical Center", "Knapp Medical Center"])
+plt.show()
+```
+
+---
+
+# 7. Slide 5. Executive table
+
+Sometimes a clean styled table wins the room.
+
+```python
+def slide5_exec_table(data: pd.DataFrame, top_n_groups_per_facility: int = 3):
+    table_df = data[data["group_rank_in_facility"] <= top_n_groups_per_facility].copy()
+    table_df = table_df.sort_values(["AdmittingFacilityNameClean", "group_rank_in_facility"])
+
+    out = table_df[[
+        "AdmittingFacilityNameClean",
+        "AttendingProviderHospitalGroupName_VOP",
+        "acute_events",
+        "obs_events",
+        "total_events",
+        "facility_share_pct",
+        "obs_rate_pct"
+    ]].copy()
+
+    out["facility_share_pct"] = out["facility_share_pct"].map(lambda x: f"{x:.0%}")
+    out["obs_rate_pct"] = out["obs_rate_pct"].map(lambda x: f"{x:.0%}")
+
+    return out.style \
+        .hide(axis="index") \
+        .set_caption("Facility-by-Hospitalist Group Scorecard") \
+        .set_table_styles([
+            {"selector": "caption", "props": [("font-size", "16px"), ("font-weight", "bold"), ("color", ACCENT)]},
+            {"selector": "th", "props": [("background-color", ACCENT), ("color", "white"), ("padding", "8px")]},
+            {"selector": "td", "props": [("padding", "6px")]},
+        ]) \
+        .background_gradient(subset=["acute_events", "obs_events", "total_events"], cmap="Blues")
+
+slide5_exec_table(df, top_n_groups_per_facility=3)
+```
+
+---
+
+# 8. Export charts for PowerPoint
+
+```python
+fig1.savefig("slide_1_share_of_business.png", dpi=300, bbox_inches="tight")
+fig2.savefig("slide_2_volume_by_facility_group.png", dpi=300, bbox_inches="tight")
+fig3.savefig("slide_3_obs_heatmap.png", dpi=300, bbox_inches="tight")
+fig4.savefig("slide_4_facility_focus.png", dpi=300, bbox_inches="tight")
+```
+
+---
+
+# 9. Slide storyline I would use
+
+## Slide 1
+
+**Headline:** Hospitalist group share varies materially by facility, with some hospitals showing much higher routing concentration than others
+**Visual:** 100% stacked bar
+**Takeaway:** use `highest_concentration_takeaway(df)`
+
+## Slide 2
+
+**Headline:** Within each hospital, a small number of groups account for most identified hospitalized volume
+**Visual:** grouped bars by facility
+**Takeaway:** use `top_facility_group_takeaway(df)`
+
+## Slide 3
+
+**Headline:** Observation mix is not uniform. Certain facility-group combinations are materially more OBS-heavy
+**Visual:** OBS heatmap
+**Takeaway:** use `highest_obs_takeaway(df)`
+
+## Slide 4
+
+**Headline:** Key hospital comparisons make the routing pattern immediately actionable
+**Visual:** focused facility comparisons for Harlingen, Knapp, Valley Baptist, etc.
+**Takeaway:** use `focused_facility_takeaway(df, "Harlingen Medical Center")`
+
+## Slide 5
+
+**Headline:** The underlying scorecard supports deeper drill-down into volume, mix, and later outcomes
+**Visual:** styled table
+
+---
+
+# 10. If you want slide-ready text blocks generated automatically
+
+```python
+slide_text = {
+    "slide_1_title": "Hospitalist Group Share of Business by Facility",
+    "slide_1_takeaway": highest_concentration_takeaway(df),
+    "slide_2_title": "Comparative Hospitalist Group Volume Within Each Facility",
+    "slide_2_takeaway": top_facility_group_takeaway(df),
+    "slide_3_title": "Observation Mix by Facility and Hospitalist Group",
+    "slide_3_takeaway": highest_obs_takeaway(df),
+    "slide_4_title": "Focused Facility Comparisons",
+    "slide_4_takeaway_harlingen": focused_facility_takeaway(df, "Harlingen Medical Center"),
+    "slide_4_takeaway_knapp": focused_facility_takeaway(df, "Knapp Medical Center"),
+}
+
+slide_text
+```
+
+---
+
+# My blunt recommendation
+
+Do **not** lead with the heatmap.
+Lead with:
+
+1. **share of business**
+2. **comparative counts**
+3. **facility focus**
+4. then OBS mix
+
+That sequence is much closer to what Dr. T actually asked for.
+
