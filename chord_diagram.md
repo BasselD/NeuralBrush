@@ -27,6 +27,7 @@ Save this as `index.html` in the same folder as your CSV.
   <meta charset="utf-8">
   <title>Radiology PCP to Specialist Directed Chord Diagram</title>
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3-chord@3"></script>
 
   <style>
     body {
