@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Radiology PCP to Specialist Directed Chord Diagram</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f7f9fb;
+      color: #1f2937;
+    }
+
+    h2 {
+      text-align: center;
+      margin-top: 24px;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    svg {
+      display: block;
+      margin: auto;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    .group path {
+      stroke: #fff;
+      stroke-width: 1px;
+    }
+
+    .group text {
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .ribbon {
+      fill-opacity: 0.65;
+      stroke-opacity: 0.35;
+    }
+
+    .ribbon:hover {
+      fill-opacity: 0.95;
+      stroke-opacity: 0.8;
+    }
+
+    .tooltip {
+      position: absolute;
+      padding: 10px 12px;
+      background: rgba(17, 24, 39, 0.92);
+      color: white;
+      border-radius: 8px;
+      font-size: 13px;
+      pointer-events: none;
+      opacity: 0;
+      line-height: 1.4;
+      max-width: 360px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Radiology Referral Cost Flow</h2>
+<div class="subtitle">Directed flow from PCPs to specialists, weighted by Cost(SUM)</div>
+
+<div class="tooltip"></div>
+<svg></svg>
+
+<script>
+const width = 1300;
+const height = 750;
+
+const outerRadius = Math.min(width, height) * 0.40;
+const innerRadius = outerRadius - 22;
+
+const svg = d3.select("svg")
+  .attr("width", width)
+  .attr("height", height)
+  .attr("viewBox", [-width / 2, -height / 2, width, height]);
+
+const tooltip = d3.select(".tooltip");
+
+const formatCost = d3.format("$,.0f");
+
+d3.csv("radiology_referrals.csv").then(data => {
+
+  data = data
+    .map(d => ({
+      pcp: d["PCP Name"]?.trim(),
+      specialist: d["Provider Name"]?.trim(),
+      cost: +String(d["Cost(SUM)"]).replace(/[$,]/g, ""),
+      cpc: d["CPC"]?.trim()
+    }))
+    .filter(d => d.pcp && d.specialist && !isNaN(d.cost) && d.cost > 0);
+
+  const topN = 40;
+
+  data = data
+    .sort((a, b) => d3.descending(a.cost, b.cost))
+    .slice(0, topN);
+
+  const names = Array.from(new Set([
+    ...data.map(d => d.pcp),
+    ...data.map(d => d.specialist)
+  ]));
+
+  const index = new Map(names.map((name, i) => [name, i]));
+
+  const matrix = Array.from({ length: names.length }, () =>
+    Array(names.length).fill(0)
+  );
+
+  data.forEach(d => {
+    matrix[index.get(d.pcp)][index.get(d.specialist)] += d.cost;
+  });
+
+  const chord = d3.chordDirected()
+    .padAngle(0.04)
+    .sortSubgroups(d3.descending)
+    .sortChords(d3.descending);
+
+  const chords = chord(matrix);
+
+  const color = d3.scaleOrdinal()
+    .domain(names)
+    .range(d3.schemeTableau10.concat(d3.schemeSet3));
+
+  const arc = d3.arc()
+    .innerRadius(innerRadius)
+    .outerRadius(outerRadius);
+
+  const ribbon = d3.ribbonArrow()
+    .radius(innerRadius - 2)
+    .padAngle(0.01);
+
+  const group = svg.append("g")
+    .selectAll("g")
+    .data(chords.groups)
+    .join("g")
+    .attr("class", "group");
+
+  group.append("path")
+    .attr("fill", d => color(names[d.index]))
+    .attr("d", arc)
+    .on("mouseover", function(event, d) {
+      const name = names[d.index];
+
+      const sent = d3.sum(matrix[d.index]);
+      const received = d3.sum(matrix, row => row[d.index]);
+
+      tooltip
+        .style("opacity", 1)
+        .html(`
+          <strong>${name}</strong><br>
+          Outgoing: ${formatCost(sent)}<br>
+          Incoming: ${formatCost(received)}
+        `);
+    })
+    .on("mousemove", event => {
+      tooltip
+        .style("left", `${event.pageX + 14}px`)
+        .style("top", `${event.pageY - 20}px`);
+    })
+    .on("mouseout", () => tooltip.style("opacity", 0));
+
+  group.append("text")
+    .each(d => d.angle = (d.startAngle + d.endAngle) / 2)
+    .attr("dy", "0.35em")
+    .attr("transform", d => `
+      rotate(${(d.angle * 180 / Math.PI - 90)})
+      translate(${outerRadius + 12})
+      ${d.angle > Math.PI ? "rotate(180)" : ""}
+    `)
+    .attr("text-anchor", d => d.angle > Math.PI ? "end" : "start")
+    .text(d => names[d.index]);
+
+  svg.append("g")
+    .attr("fill-opacity", 0.75)
+    .selectAll("path")
+    .data(chords)
+    .join("path")
+    .attr("class", "ribbon")
+    .attr("d", ribbon)
+    .attr("fill", d => color(names[d.source.index]))
+    .attr("stroke", d => d3.rgb(color(names[d.source.index])).darker())
+    .on("mouseover", function(event, d) {
+      d3.select(this).raise();
+
+      const sourceName = names[d.source.index];
+      const targetName = names[d.target.index];
+
+      const matchingRows = data.filter(row =>
+        row.pcp === sourceName &&
+        row.specialist === targetName
+      );
+
+      const cpcList = [
+        ...new Set(
+          matchingRows
+            .map(row => row.cpc)
+            .filter(Boolean)
+        )
+      ];
+
+      tooltip
+        .style("opacity", 1)
+        .html(`
+          <strong>${sourceName}</strong> → <strong>${targetName}</strong><br>
+          Cost: ${formatCost(d.source.value)}<br>
+          CPC: ${cpcList.join(", ") || "N/A"}
+        `);
+    })
+    .on("mousemove", event => {
+      tooltip
+        .style("left", `${event.pageX + 14}px`)
+        .style("top", `${event.pageY - 20}px`);
+    })
+    .on("mouseout", () => tooltip.style("opacity", 0));
+
+});
+</script>
+
+</body>
+</html>
