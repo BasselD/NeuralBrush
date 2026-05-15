@@ -184,12 +184,22 @@ d3.csv("radiology_referrals.csv").then(data => {
     `)
     .attr("text-anchor", d => d.angle > Math.PI ? "end" : "start")
     .text(d => names[d.index]);
+  const sortedChords = [...chords].sort((a, b) => {
+  const aKey = `${names[a.source.index]}|||${names[a.target.index]}`;
+  const bKey = `${names[b.source.index]}|||${names[b.target.index]}`;
 
-  svg.append("g")
-    .attr("fill-opacity", 0.75)
-    .selectAll("path")
-    .data(chords)
-    .join("path")
+  const aCpc = flowStats.get(aKey)?.avgCpc ?? -Infinity;
+  const bCpc = flowStats.get(bKey)?.avgCpc ?? -Infinity;
+
+  // Lower CPC drawn first, higher CPC drawn last/on top
+  return d3.ascending(aCpc, bCpc);
+});
+
+svg.append("g")
+  .attr("fill-opacity", 0.75)
+  .selectAll("path")
+  .data(sortedChords)
+  .join("path")
     .attr("class", "ribbon")
     .attr("d", ribbon)
     .attr("fill", d => color(names[d.source.index]))
