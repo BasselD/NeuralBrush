@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Essential Python Data & AI Ecosystem</title>
+  <meta name="description" content="An editable map of essential Python libraries for data science and AI." />
+  <style>
+    :root {
+      --bg: #05070d; --surface: rgba(15,20,34,.86); --text: #f6f8ff;
+      --muted: #99a5bd; --line: rgba(163,183,224,.15); --blue: #4aa8ff;
+      --cyan: #31d8e8; --purple: #a779ff; --coral: #ff7b72;
+      --green: #61dfa7; --yellow: #ffd166; --max: 1320px;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; min-width: 320px; min-height: 100vh; color: var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(49,216,232,.10), transparent 34rem),
+        radial-gradient(circle at 95% 10%, rgba(167,121,255,.12), transparent 34rem),
+        linear-gradient(145deg, #070a12, var(--bg) 55%, #080a14);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .24;
+      background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 44px 44px; mask-image: linear-gradient(to bottom, black, transparent 92%);
+    }
+    button, input { font: inherit; }
+    .page { width: min(calc(100% - 32px), var(--max)); margin: 0 auto; padding: 58px 0 72px; }
+    .hero { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 28px; align-items: end; margin-bottom: 34px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; color: var(--cyan);
+      font-size: .76rem; font-weight: 750; letter-spacing: .17em; text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 30px; height: 1px; background: currentColor; box-shadow: 0 0 12px currentColor; }
+    h1 { max-width: 900px; margin: 0; font-size: clamp(2.6rem,6vw,5.9rem); line-height: .94; letter-spacing: -.065em; font-weight: 780; }
+    h1 span { color: transparent; background: linear-gradient(105deg,#fff 5%,#96e8ff 45%,#b9a0ff 92%); background-clip: text; -webkit-background-clip: text; }
+    .subtitle { max-width: 720px; margin: 20px 0 0; color: var(--muted); font-size: clamp(1rem,1.7vw,1.22rem); }
+    .python-mark {
+      width: 108px; height: 108px; padding: 22px; border: 1px solid rgba(86,182,255,.25); border-radius: 30px;
+      background: linear-gradient(145deg,rgba(43,114,184,.14),rgba(255,212,59,.08));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 28px 80px rgba(0,0,0,.28);
+    }
+    .python-mark img { width: 100%; height: 100%; object-fit: contain; }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px; margin-bottom: 28px;
+      border: 1px solid var(--line); border-radius: 18px; background: rgba(10,14,24,.72);
+      backdrop-filter: blur(16px); box-shadow: 0 18px 50px rgba(0,0,0,.22);
+    }
+    .search {
+      flex: 1 1 270px; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px;
+      border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.035);
+    }
+    .search svg { width: 18px; color: var(--muted); }
+    .search input { width: 100%; border: 0; outline: 0; color: var(--text); background: transparent; }
+    .search input::placeholder { color: #78849b; }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+    .filter {
+      min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px;
+      color: var(--muted); background: transparent; cursor: pointer; transition: 160ms ease;
+    }
+    .filter:hover, .filter.active { color: #fff; border-color: rgba(74,168,255,.48); background: rgba(74,168,255,.13); }
+    .ecosystem { position: relative; display: grid; grid-template-columns: repeat(12,1fr); gap: 22px; }
+    .stage {
+      --accent: var(--blue); position: relative; min-width: 0; padding: 24px; overflow: hidden;
+      border: 1px solid var(--line); border-radius: 24px;
+      background: linear-gradient(145deg,rgba(18,25,43,.88),rgba(9,13,24,.94));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.045),0 22px 65px rgba(0,0,0,.22);
+      transition: opacity 180ms ease, transform 180ms ease, border-color 180ms ease;
+    }
+    .stage::before { content: ""; position: absolute; inset: 0 0 auto; height: 2px; background: linear-gradient(90deg,transparent,var(--accent),transparent); opacity: .8; }
+    .stage::after { content: ""; position: absolute; width: 180px; height: 180px; top: -110px; right: -70px; border-radius: 50%; background: var(--accent); opacity: .08; filter: blur(18px); }
+    .stage:hover { transform: translateY(-3px); border-color: color-mix(in srgb,var(--accent),transparent 58%); }
+    .stage.hidden { display: none; }
+    .stage-workspace, .stage-data { grid-column: 1 / 13; }
+    .stage-workspace { --accent: var(--blue); } .stage-data { --accent: var(--cyan); }
+    .stage-analysis { grid-column: 1 / 7; --accent: var(--purple); }
+    .stage-ml { grid-column: 7 / 13; --accent: var(--coral); }
+    .stage-deep { grid-column: 1 / 8; --accent: var(--green); }
+    .stage-delivery { grid-column: 8 / 13; --accent: var(--yellow); }
+    .stage-head { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: start; gap: 18px; margin-bottom: 22px; }
+    .stage-kicker { margin: 0 0 4px; color: var(--accent); font-size: .67rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .stage-title { margin: 0; font-size: clamp(1.25rem,2vw,1.72rem); line-height: 1.1; letter-spacing: -.025em; }
+    .stage-count {
+      flex: 0 0 auto; display: grid; place-items: center; width: 38px; height: 38px;
+      border: 1px solid color-mix(in srgb,var(--accent),transparent 65%); border-radius: 12px;
+      color: var(--accent); background: color-mix(in srgb,var(--accent),transparent 90%); font-size: .8rem; font-weight: 800;
+    }
+    .library-grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 12px; }
+    .library {
+      display: grid; grid-template-columns: 50px minmax(0,1fr); gap: 14px; align-items: center; min-height: 94px; padding: 14px;
+      border: 1px solid rgba(255,255,255,.07); border-radius: 17px; color: inherit; text-decoration: none;
+      background: rgba(255,255,255,.026); transition: 150ms ease;
+    }
+    .library:hover { border-color: color-mix(in srgb,var(--accent),transparent 62%); background: color-mix(in srgb,var(--accent),transparent 93%); transform: translateY(-2px); }
+    .library.dimmed { display: none; }
+    .logo-wrap { display: grid; place-items: center; width: 50px; height: 50px; padding: 9px; border-radius: 14px; background: rgba(255,255,255,.94); box-shadow: 0 12px 28px rgba(0,0,0,.22); }
+    .logo-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .logo-fallback { display: none; color: #0a1020; font-weight: 900; letter-spacing: -.04em; }
+    .library-name { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 1rem; font-weight: 760; letter-spacing: -.015em; }
+    .core-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+    .library-desc { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.4; }
+    .flow-divider { grid-column: 1 / 13; display: flex; align-items: center; gap: 14px; min-height: 26px; color: #65728b; }
+    .flow-divider::before, .flow-divider::after { content: ""; height: 1px; flex: 1; background: linear-gradient(90deg,transparent,var(--line)); }
+    .flow-divider::after { background: linear-gradient(90deg,var(--line),transparent); }
+    .flow-divider svg { width: 18px; }
+    .empty-state { display: none; grid-column: 1 / 13; padding: 54px 24px; border: 1px dashed var(--line); border-radius: 24px; color: var(--muted); text-align: center; }
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 18px 34px; align-items: center; margin-top: 24px; padding: 17px 20px;
+      border: 1px solid var(--line); border-radius: 18px; color: var(--muted); background: rgba(10,14,24,.72);
+    }
+    .legend strong { color: var(--text); } .legend-item { display: flex; align-items: center; gap: 9px; font-size: .84rem; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+    .footer-note { margin: 16px 4px 0; color: #65728b; font-size: .75rem; }
+    @media (max-width: 900px) {
+      .page { padding-top: 36px; } .hero { grid-template-columns: 1fr; align-items: start; }
+      .python-mark { width: 76px; height: 76px; padding: 16px; grid-row: 1; }
+      .stage-analysis, .stage-ml, .stage-deep, .stage-delivery { grid-column: 1 / 13; }
+    }
+    @media (max-width: 560px) {
+      .page { width: min(calc(100% - 20px),var(--max)); padding-bottom: 38px; }
+      .stage { padding: 18px; border-radius: 20px; } .library-grid { grid-template-columns: 1fr; }
+      .toolbar { position: sticky; top: 8px; z-index: 20; } .filter { padding-inline: 12px; }
+    }
+    @media print {
+      body { background: #05070d !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .toolbar { display: none; } .page { width: 100%; padding: 24px; } .stage { break-inside: avoid; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Python learning map</p>
+        <h1>The essential <span>Python data & AI ecosystem</span></h1>
+        <p class="subtitle">A practical path from exploratory code to scalable, production-ready insights. Start with the foundations, then choose specialized tools based on the work.</p>
+      </div>
+      <div class="python-mark" aria-hidden="true"><img src="https://cdn.simpleicons.org/python/3776AB" alt="" /></div>
+    </header>
+
+    <section class="toolbar" aria-label="Diagram controls">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input id="searchInput" type="search" placeholder="Find a library or capability..." autocomplete="off" />
+      </label>
+      <div class="filters" id="filters"></div>
+    </section>
+
+    <section class="ecosystem" id="ecosystem" aria-live="polite"></section>
+
+    <aside class="legend">
+      <div class="legend-item"><span class="legend-dot"></span><strong>Core starting stack</strong><span>Recommended first</span></div>
+      <div class="legend-item"><strong>Specialized libraries</strong><span>Choose according to the workload</span></div>
+      <div class="legend-item"><strong>Logos</strong><span>Loaded from referenced web URLs</span></div>
+    </aside>
+    <p class="footer-note">Edit the <strong>ECOSYSTEM</strong> object in the JavaScript section to update categories, descriptions, links, or logo URLs.</p>
+  </main>
+
+  <script>
+    // EDITABLE CONTENT MODEL. Layout is rendered automatically.
+    // Logos are referenced by URL and are not embedded in this file.
+    const ECOSYSTEM = [
+      {
+        id: "workspace", step: "01 · Explore", title: "Workspace & Development",
+        libraries: [
+          { name: "JupyterLab", description: "Explore, code, and document", core: true, logo: "https://cdn.simpleicons.org/jupyter/F37626", url: "https://jupyter.org/" }
+        ]
+      },
+      {
+        id: "data", step: "02 · Structure", title: "Data Foundations",
+        libraries: [
+          { name: "NumPy", description: "Arrays and numerical computing", core: true, logo: "https://cdn.simpleicons.org/numpy/013243", url: "https://numpy.org/" },
+          { name: "pandas", description: "Flexible DataFrames", core: true, logo: "https://cdn.simpleicons.org/pandas/150458", url: "https://pandas.pydata.org/" },
+          { name: "Polars", description: "Fast, memory-efficient DataFrames", logo: "https://cdn.simpleicons.org/polars/CD792C", url: "https://pola.rs/" },
+          { name: "SciPy", description: "Scientific computing and optimization", logo: "https://cdn.simpleicons.org/scipy/8CAAE6", url: "https://scipy.org/" }
+        ]
+      },
+      {
+        id: "analysis", step: "03A · Explain", title: "Analysis & Visualization",
+        libraries: [
+          { name: "statsmodels", description: "Statistics and time series", logo: "https://www.statsmodels.org/stable/_images/statsmodels-logo-v2-horizontal.svg", url: "https://www.statsmodels.org/" },
+          { name: "Matplotlib", description: "Foundational plotting", core: true, logo: "https://cdn.simpleicons.org/matplotlib/11557C", url: "https://matplotlib.org/" },
+          { name: "Seaborn", description: "Statistical visualization", logo: "https://seaborn.pydata.org/_static/logo-wide-lightbg.svg", url: "https://seaborn.pydata.org/" },
+          { name: "Plotly", description: "Interactive charts and dashboards", logo: "https://cdn.simpleicons.org/plotly/3F4F75", url: "https://plotly.com/python/" }
+        ]
+      },
+      {
+        id: "ml", step: "03B · Predict", title: "Machine Learning",
+        libraries: [
+          { name: "scikit-learn", description: "Preprocessing, models, and evaluation", core: true, logo: "https://cdn.simpleicons.org/scikitlearn/F7931E", url: "https://scikit-learn.org/" },
+          { name: "XGBoost", description: "High-performance gradient boosting", logo: "https://cdn.simpleicons.org/xgboost/337AB7", url: "https://xgboost.ai/" },
+          { name: "LightGBM", description: "Fast, scalable gradient boosting", logo: "https://raw.githubusercontent.com/microsoft/LightGBM/master/docs/logo/LightGBM_logo_black_text.svg", url: "https://lightgbm.readthedocs.io/" }
+        ]
+      },
+      {
+        id: "deep", step: "04 · Learn deeply", title: "Deep Learning & Vision",
+        libraries: [
+          { name: "PyTorch", description: "Flexible deep learning", logo: "https://cdn.simpleicons.org/pytorch/EE4C2C", url: "https://pytorch.org/" },
+          { name: "Keras", description: "High-level neural-network API", logo: "https://cdn.simpleicons.org/keras/D00000", url: "https://keras.io/" },
+          { name: "OpenCV", description: "Image and video processing", logo: "https://cdn.simpleicons.org/opencv/5C3EE8", url: "https://opencv.org/" }
+        ]
+      },
+      {
+        id: "delivery", step: "05 · Scale & share", title: "Scale & Delivery",
+        libraries: [
+          { name: "Dask", description: "Parallel and distributed computing", logo: "https://cdn.simpleicons.org/dask/FDA061", url: "https://www.dask.org/" },
+          { name: "Streamlit", description: "Rapid interactive data apps", logo: "https://cdn.simpleicons.org/streamlit/FF4B4B", url: "https://streamlit.io/" }
+        ]
+      }
+    ];
+
+    const ecosystem = document.getElementById("ecosystem");
+    const filters = document.getElementById("filters");
+    const searchInput = document.getElementById("searchInput");
+    let activeFilter = "all";
+    const arrow = '<div class="flow-divider" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 4v14M7 13l5 5 5-5"/></svg></div>';
+
+    function initials(name) {
+      return name.split(/[\s-]+/).map(word => word[0]).join("").slice(0, 3).toUpperCase();
+    }
+
+    function libraryCard(library) {
+      const core = library.core ? '<span class="core-dot" title="Core starting stack"></span>' : "";
+      return `
+        <a class="library" href="${library.url}" target="_blank" rel="noopener noreferrer"
+           data-search="${library.name.toLowerCase()} ${library.description.toLowerCase()}"
+           data-core="${Boolean(library.core)}">
+          <span class="logo-wrap">
+            <img src="${library.logo}" alt="${library.name} logo" loading="lazy"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block'" />
+            <span class="logo-fallback">${initials(library.name)}</span>
+          </span>
+          <span><span class="library-name">${library.name}${core}</span><span class="library-desc">${library.description}</span></span>
+        </a>`;
+    }
+
+    function stageCard(stage) {
+      return `
+        <article class="stage stage-${stage.id}" data-stage="${stage.id}">
+          <header class="stage-head">
+            <div><p class="stage-kicker">${stage.step}</p><h2 class="stage-title">${stage.title}</h2></div>
+            <span class="stage-count">${String(stage.libraries.length).padStart(2, "0")}</span>
+          </header>
+          <div class="library-grid">${stage.libraries.map(libraryCard).join("")}</div>
+        </article>`;
+    }
+
+    function render() {
+      const stages = ECOSYSTEM.map(stageCard);
+      ecosystem.innerHTML = [
+        stages[0], arrow, stages[1], arrow, stages[2], stages[3], arrow,
+        stages[4], stages[5],
+        '<div class="empty-state">No matching library. Try another search or category.</div>'
+      ].join("");
+      applyFilters();
+    }
+
+    function renderFilters() {
+      const options = [{ id: "all", label: "All" }, { id: "core", label: "Core stack" }]
+        .concat(ECOSYSTEM.map(stage => ({ id: stage.id, label: stage.title })));
+      filters.innerHTML = options.map(option =>
+        `<button class="filter ${option.id === "all" ? "active" : ""}" type="button" data-filter="${option.id}">${option.label}</button>`
+      ).join("");
+    }
+
+    function applyFilters() {
+      const query = searchInput.value.trim().toLowerCase();
+      let visibleLibraries = 0;
+      document.querySelectorAll(".stage").forEach(stage => {
+        const stageId = stage.dataset.stage;
+        const stageAllowed = activeFilter === "all" || activeFilter === "core" || activeFilter === stageId;
+        let visibleInStage = 0;
+        stage.querySelectorAll(".library").forEach(card => {
+          const matchesSearch = !query || card.dataset.search.includes(query);
+          const matchesCore = activeFilter !== "core" || card.dataset.core === "true";
+          const show = stageAllowed && matchesSearch && matchesCore;
+          card.classList.toggle("dimmed", !show);
+          if (show) visibleInStage += 1;
+        });
+        stage.classList.toggle("hidden", visibleInStage === 0);
+        visibleLibraries += visibleInStage;
+      });
+      document.querySelectorAll(".flow-divider").forEach(divider => {
+        divider.style.display = activeFilter === "all" && !query ? "flex" : "none";
+      });
+      document.querySelector(".empty-state").style.display = visibleLibraries ? "none" : "block";
+    }
+
+    filters.addEventListener("click", event => {
+      const button = event.target.closest("[data-filter]");
+      if (!button) return;
+      activeFilter = button.dataset.filter;
+      document.querySelectorAll(".filter").forEach(item => item.classList.toggle("active", item === button));
+      applyFilters();
+    });
+    searchInput.addEventListener("input", applyFilters);
+    renderFilters();
+    render();
+  </script>
+</body>
+</html>
