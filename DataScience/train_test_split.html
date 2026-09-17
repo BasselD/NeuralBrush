@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Train Test Split Diagram - Highlighted</title>
+<style>
+    body {
+        background-color: #0b0b12;
+        color: #ffffff;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+    }
+    .diagram-container {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 20px;
+    }
+    .col-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .row-group {
+        display: flex;
+        align-items: flex-end;
+        gap: 15px;
+    }
+    .grid-title {
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+    }
+    .grid {
+        display: grid;
+        gap: 2px;
+    }
+    .cell {
+        width: 18px;
+        height: 18px;
+        border: 1px solid #ffffff;
+        box-sizing: border-box;
+    }
+    
+    /* Base colors */
+    .c-empty { background-color: transparent; }
+    .c-cyan { background-color: #40e0d0; border-color: #20b2aa; }
+    .c-yellow { background-color: #ffd700; border-color: #daa520; }
+    
+    /* New distinct hues for the randomly selected test rows */
+    .c-cyan-test { background-color: #1e90ff; border-color: #104e8b; }
+    .c-yellow-test { background-color: #ff8c00; border-color: #8b4500; }
+
+    .arrow-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        font-size: 13px;
+        font-weight: bold;
+    }
+    .arrow { font-size: 30px; line-height: 0.8; margin: 5px 0; }
+    .sub-text { font-size: 11px; font-weight: normal; max-width: 110px; margin-top: 5px; }
+    .split-section { display: flex; flex-direction: column; gap: 25px; }
+    .split-row { display: flex; align-items: center; gap: 20px; }
+    .ml-model {
+        border: 2px solid #ffffff;
+        width: 140px;
+        height: 280px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 16px;
+    }
+</style>
+</head>
+<body>
+
+<div class="diagram-container">
+    
+    <!-- Stage 1: Full Dataset -->
+    <div class="col-group">
+        <div class="grid-title">Full Dataset</div>
+        <div class="grid" style="grid-template-columns: repeat(6, 1fr);">
+            <script>
+                for(let i=0; i<60; i++) document.write('<div class="cell c-empty"></div>');
+            </script>
+        </div>
+    </div>
+
+    <!-- Arrow 0 -->
+    <div class="arrow-box">
+        0. Arrange data
+        <div class="arrow">&#10142;</div>
+    </div>
+
+    <!-- Stage 2: Features & Target with Highlighted Random Rows -->
+    <div class="row-group">
+        <div class="col-group">
+            <div class="grid-title">Features</div>
+            <div class="grid" style="grid-template-columns: repeat(5, 1fr);">
+                <script>
+                    // We select 3 distinct rows out of 10 to act as our "test" selection
+                    const testRows = [2, 5, 8]; 
+                    for(let i=0; i<50; i++) {
+                        let row = Math.floor(i / 5);
+                        let cellClass = testRows.includes(row) ? 'c-cyan-test' : 'c-cyan';
+                        document.write('<div class="cell ' + cellClass + '"></div>');
+                    }
+                </script>
+            </div>
+        </div>
+        <div class="col-group">
+            <div class="grid-title">Target</div>
+            <div class="grid" style="grid-template-columns: repeat(1, 1fr);">
+                <script>
+                    for(let i=0; i<10; i++) {
+                        let cellClass = testRows.includes(i) ? 'c-yellow-test' : 'c-yellow';
+                        document.write('<div class="cell ' + cellClass + '"></div>');
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+
+    <!-- Arrow 1 -->
+    <div class="arrow-box">
+        1. *Train Test Split
+        <div class="arrow">&#10142;</div>
+        <div class="sub-text">
+            *Consists of:<br>
+            a. Random sampling<br>
+            b. Split into training & test sets
+        </div>
+    </div>
+
+    <!-- Stage 3: Train / Test Splits -->
+    <div class="split-section">
+        
+        <!-- Top Row: Training Data -->
+        <div class="split-row">
+            <div class="row-group">
+                <div class="col-group">
+                    <div class="grid-title">X_train</div>
+                    <div class="grid" style="grid-template-columns: repeat(5, 1fr);">
+                        <script>
+                            for(let i=0; i<35; i++) document.write('<div class="cell c-cyan"></div>');
+                        </script>
+                    </div>
+                </div>
+                <div class="col-group">
+                    <div class="grid-title">y_train</div>
+                    <div class="grid" style="grid-template-columns: repeat(1, 1fr);">
+                        <script>
+                            for(let i=0; i<7; i++) document.write('<div class="cell c-yellow"></div>');
+                        </script>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="arrow-box">
+                2. Use for training
+                <div class="arrow">&#10142;</div>
+            </div>
+        </div>
+
+        <!-- Bottom Row: Testing Data -->
+        <div class="split-row">
+            <div class="row-group">
+                <div class="col-group">
+                    <div class="grid-title">X_test</div>
+                    <div class="grid" style="grid-template-columns: repeat(5, 1fr);">
+                        <script>
+                            // Applying the test hue to the extracted X_test subset
+                            for(let i=0; i<15; i++) document.write('<div class="cell c-cyan-test"></div>');
+                        </script>
+                    </div>
+                </div>
+                <div class="col-group">
+                    <div class="grid-title">y_test</div>
+                    <div class="grid" style="grid-template-columns: repeat(1, 1fr);">
+                        <script>
+                            // Applying the test hue to the extracted y_test subset
+                            for(let i=0; i<3; i++) document.write('<div class="cell c-yellow-test"></div>');
+                        </script>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arrow-box">
+                3. Use for testing
+                <div class="arrow">&#10142;</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Stage 4: ML Model -->
+    <div class="col-group">
+        <div class="ml-model">
+            ML Model
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
