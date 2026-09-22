@@ -64,57 +64,113 @@ cax.set_ylabel(
     labelpad=15
 )
 
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import matplotlib.dates as mdates
+
 # --------------------------------------------------
-# 4. Resize figure to accommodate bar chart
+# 1. Dynamic claims formatter
+# --------------------------------------------------
+
+def format_claims(value):
+    if abs(value) >= 1000:
+        return f'{value/1000:,.1f}K'
+    return f'{value:,.0f}'
+
+
+# --------------------------------------------------
+# 2. Prepare last 21 refreshes
+# --------------------------------------------------
+
+last_21 = (
+    df_tb['CLMS_CA_CAP']
+    .sort_index()
+    .dropna()
+    .tail(21)
+)
+
+
+# --------------------------------------------------
+# 3. Resize the figure
 # --------------------------------------------------
 
 n_years = df_tb.index.year.nunique()
 
 fig.set_size_inches(
-    16,
-    max(9, n_years * 2.2 + 4)
+    18,
+    max(10, n_years * 2.5 + 3)
 )
 
-# Move calendar upward to create space below
-for axis in fig.axes:
+# Adjust the calendar axes
+# Preserve their original relative positions
+
+calendar_axes = fig.axes[:-1]
+
+for axis in calendar_axes:
+
     pos = axis.get_position()
 
     axis.set_position([
-        pos.x0,
-        0.40 + pos.y0 * 0.52,
-        pos.width,
-        pos.height * 0.52
+        0.10,
+        0.38 + pos.y0 * 0.58,
+        0.80,
+        pos.height * 0.58
     ])
 
+
 # --------------------------------------------------
-# 5. Add bar chart subplot
+# 4. Customize calendar colorbar
+# --------------------------------------------------
+
+cax = fig.axes[-1]
+
+cax.yaxis.set_major_formatter(
+    ticker.FuncFormatter(
+        lambda x, pos: format_claims(x)
+    )
+)
+
+cax.set_ylabel(
+    'Claims Volume',
+    rotation=270,
+    labelpad=15
+)
+
+
+# --------------------------------------------------
+# 5. Add last 21 refreshes bar chart
 # --------------------------------------------------
 
 ax_bar = fig.add_axes([
     0.10,   # Left
     0.08,   # Bottom
     0.80,   # Width
-    0.24    # Height
+    0.23    # Height
 ])
+
+# Highlight latest refresh
+colors = ['#7852A3'] * len(last_21)
+
+colors[-1] = '#002850'
 
 bars = ax_bar.bar(
     last_21.index,
     last_21.values,
-
-    color='#7852A3',
+    color=colors,
     edgecolor='white',
     linewidth=0.5,
     width=0.8
 )
 
+
 # --------------------------------------------------
-# 6. Add value labels above bars
+# 6. Display actual values above bars
 # --------------------------------------------------
 
 ax_bar.bar_label(
     bars,
     labels=[
-        f'{value/1000:,.1f}K'
+        format_claims(value)
         for value in last_21.values
     ],
     padding=3,
@@ -122,8 +178,9 @@ ax_bar.bar_label(
     color='#002850'
 )
 
+
 # --------------------------------------------------
-# 7. Customize bar chart
+# 7. Format axes
 # --------------------------------------------------
 
 ax_bar.set_title(
@@ -134,19 +191,14 @@ ax_bar.set_title(
     pad=15
 )
 
-ax_bar.set_ylabel(
-    'Claims Volume',
-    color='#002850'
-)
+ax_bar.set_ylabel('Claims Volume')
 
-# Format Y-axis in thousands
 ax_bar.yaxis.set_major_formatter(
     ticker.FuncFormatter(
-        lambda x, pos: f'{x/1000:,.0f}K'
+        lambda x, pos: format_claims(x)
     )
 )
 
-# Format X-axis as dates
 ax_bar.xaxis.set_major_formatter(
     mdates.DateFormatter('%b %d')
 )
@@ -157,14 +209,10 @@ plt.setp(
     ha='right'
 )
 
-# Add space above tallest bar for labels
 ax_bar.set_ylim(
     0,
     last_21.max() * 1.18
 )
-
-# Background and grid
-ax_bar.set_facecolor('#F8F9FC')
 
 ax_bar.grid(
     axis='y',
@@ -176,7 +224,6 @@ ax_bar.grid(
 
 ax_bar.set_axisbelow(True)
 
-# Remove unnecessary borders
 ax_bar.spines['top'].set_visible(False)
 ax_bar.spines['right'].set_visible(False)
 
